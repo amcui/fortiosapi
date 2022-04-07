@@ -4,3 +4,4 @@ paramiko
 nose
 packaging
 oyaml
+python-dotenv
