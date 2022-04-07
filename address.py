@@ -19,8 +19,12 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 
-dv = dotenv_values('.env')
 
+## ============================ GLOBAL VARIABLES ============================ ## 
+dv   = dotenv_values('.env')
+tkn  = dv['TKN_READ']
+vdom = dv['VDOM']
+## ========================================================================== ## 
 
 
 ## =============================== FUNCTIONS ================================ ##
@@ -43,6 +47,9 @@ def fgt_login(FGT, TKN):
 
 
 def select_group():
+    '''
+    Select either GRP_Malicious or Block_SSLVPN
+    '''
     name_127 = 'GRP_Malicious'
     name_938 = 'Block_SSLVPN'
 
@@ -53,23 +60,26 @@ def select_group():
     elif int(resp) == 938:
         return int(resp), name_938
     else:
-        raise Exception('Invalid entry')
+        raise Exception('\nInvalid entry')
 
 
 def get_new_address_info(SELECTION):
+    '''
+    Get new address object information
+    '''
     if SELECTION == 127:
-        pre = 'Mal_'
+        prefix = 'Mal_'
     elif SELECTION == 938:
-        pre = 'MalSSLVPN_'
+        prefix = 'MalSSLVPN_'
 
     ip_prompt = 'IPv4 Address (/32 will be appended automatically)'
     ip1 = input(f'  Enter {ip_prompt}: ')
     ip2 = input(f'Confirm {ip_prompt}: ')
 
     if ip1 != ip2:
-        raise Exception(f'Failed to confirm IPv4 address\n1: {ip1}\n2: {ip2}')
+        raise Exception(f'\nFailed to confirm IPv4 address\n  - {ip1}\n  - {ip2}')
 
-    data_name    = f'{pre}{ip2}'
+    data_name    = f'{prefix}{ip2}'
     data_comment = f'Programmatically created on: {dt.now()}'
 
     data = {
@@ -85,8 +95,11 @@ def get_new_address_info(SELECTION):
 
 
 def create_address_object(FGT, DATA):
+    '''
+    Create new address object from information provided to get_new_address_info()
+    '''
     try:
-        main_address_set = FGT.set(path='firewall', name='address', data=DATA, vdom=dv['VDOM'])
+        main_address_set = FGT.set(path='firewall', name='address', data=DATA, vdom=vdom)
         print(f"FGT_ADDRESS_SET: {main_address_set['http_status']} - {main_address_set['status']}")
     except:
         print(main_address_set)
@@ -95,7 +108,12 @@ def create_address_object(FGT, DATA):
     
 
 def prep_addrgrp_members(FGT, NEW_MEMBER, ADDRGRP_NAME):
-    resp_addrgrp_get = FGT.get(path='firewall', name='addrgrp', mkey=ADDRGRP_NAME, vdom=dv['VDOM'])
+    '''
+    - Get list of address group members
+    - add new address object to the list
+    - return for use in set_addrgroup()
+    '''
+    resp_addrgrp_get = FGT.get(path='firewall', name='addrgrp', mkey=ADDRGRP_NAME, vdom=vdom)
     addrgrp_members  = resp_addrgrp_get['results'][0]['member']
 
     new_member = {
@@ -112,8 +130,11 @@ def prep_addrgrp_members(FGT, NEW_MEMBER, ADDRGRP_NAME):
 
 
 def get_addrgroup(FGT, ADDRGRP_NAME):
+    '''
+    Get list of address group members and print out in list
+    '''
     try:
-        main_addrgrp_get = FGT.get(path='firewall', name='addrgrp', mkey=ADDRGRP_NAME, vdom=dv['VDOM'])
+        main_addrgrp_get = FGT.get(path='firewall', name='addrgrp', mkey=ADDRGRP_NAME, vdom=vdom)
         main_addrgrp_lst = main_addrgrp_get['results'][0]['member']
         print(f'\n{ADDRGRP_NAME} Members: ')
         for mem in main_addrgrp_lst:
@@ -123,19 +144,26 @@ def get_addrgroup(FGT, ADDRGRP_NAME):
 
 
 def set_addrgroup(FGT, ADDRGRP_NAME, DATA):
+    '''
+    Set/Update members of address group
+    '''
     try:
-        main_addrgrp_set = FGT.set(path='firewall', name='addrgrp', mkey=ADDRGRP_NAME, data=DATA, vdom=dv['VDOM'])
+        main_addrgrp_set = FGT.set(path='firewall', name='addrgrp', mkey=ADDRGRP_NAME, data=DATA, vdom=vdom)
         print(f"FGT_ADDRGRP_SET: {main_addrgrp_set['http_status']} - {main_addrgrp_set['status']}")
     except:
         print(main_addrgrp_set)
 
 
 def fgt_logout(FGT):
+    '''
+    Logout
+    '''
     try:
         FGT.logout()
         print(f'\nLogged out successfully')
     except Exception as e:
         print(f'\nFailed to log out successfully: {e}')
+## ========================================================================== ##
 
 
 def main():
@@ -167,6 +195,7 @@ def main():
     fgt_logout(FGT=fgt)
 
 
+## ========================================================================== ##
 if __name__ == '__main__':
     try:
         main()
