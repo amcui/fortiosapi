@@ -6,9 +6,8 @@ https://github.com/fortinet-solutions-cse/fortiosapi
 
 
 import logging, sys
-from getpass import getpass
-from dotenv import dotenv_values
 from fortiosapi import FortiOSAPI
+from dotenv import dotenv_values
 from datetime import datetime as dt
 
 
@@ -23,49 +22,24 @@ logger.setLevel(logging.DEBUG)
 dv = dotenv_values('.env')
 
 
-def get_fgt():
+
+## =============================== FUNCTIONS ================================ ##
+def fgt_login(FGT, TKN):
+    '''
+    Login
+    '''
     try:
         ip = dv['BASE']
     except:
         ip = input('Enter FGT IP or DNS: ')
-    
-    return ip
 
-
-def get_cred():
+    ## Login with Token (Removed all user/pswd code)
     try:
-        user = dv['USER']
-        pswd = dv['PSWD']
-    except:
-        user = getpass('Enter username: ')
-        pswd = getpass('Enter password: ')
-    
-    return user, pswd
-
-
-def fgt_credlogin(FGT, IP, USER, PSWD):
-    try:
-        FGT.login(IP, USER, PSWD, verify=True)
-        print(f'Credential login success')
-    except:
-        raise Exception('Credential login failed')
-
-
-def fgt_tokenlogin(FGT, IP, TKN):
-    try:
-        FGT.tokenlogin(IP, TKN)
+        FGT.tokenlogin(ip, TKN)
         print('Token login success')
         return True
     except:
-        print('Token login failed')
-        return False
-
-
-def fgt_login(FGT, IP, TKN):
-    tkn = fgt_tokenlogin(FGT=FGT, IP=IP, TKN=TKN)
-    if tkn == False:
-        user, pswd = get_cred()
-        fgt_credlogin(FGT=FGT, IP=IP, USER=user, PSWD=pswd)
+        raise Exception(f'\nToken login failed - Invalid token: {TKN}')
 
 
 def select_group():
@@ -168,11 +142,8 @@ def main():
     ## Instantiate FortiOSAPI
     fgt = FortiOSAPI()
 
-    ## Get FortiGate DNS/IP
-    ip = get_fgt()
-
     ## LOGIN
-    fgt_login(FGT=fgt, IP=ip, TKN=dv['TKNR'])
+    fgt_login(FGT=fgt, TKN=tkn)
 
     ## Select Address Group
     SEL, ADDRGRP = select_group()
